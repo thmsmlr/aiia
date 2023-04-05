@@ -14,7 +14,7 @@ Let's see how far we can take this.
 ### Installation
 
 ```bash
- $ pip install -r requirements.txt
+ $ pip install -e .[dev]
 ```
 
 ### Usage

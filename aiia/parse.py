@@ -67,8 +67,8 @@ def to_chat_markdown(chat):
 
     for message in chat["messages"]:
         if message["role"] == "user":
-            markdown_body += f">>> {message['content']}\n"
+            markdown_body += f">>> {message['content']}\n\n"
         elif message["role"] == "assistant":
-            markdown_body += f"🤖 GPT: {message['content']}\n"
+            markdown_body += f"🤖 GPT:\n\n{message['content']}\n\n"
 
-    return f"---\n{yaml_frontmatter}---\n{markdown_body}"
+    return f"---\n{yaml_frontmatter}---\n\n{markdown_body}"
