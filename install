@@ -1,0 +1,10 @@
+#!/bin/bash
+
+source_dir="./prompts"
+target_dir=$(eval echo "~/.local/share/prompts")
+
+
+for file in "$source_dir"/*; do
+  file_name=$(basename "$file")
+  ln -fs "$file" "$target_dir/$file_name"
+done
