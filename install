@@ -3,6 +3,9 @@
 source_dir="./prompts"
 target_dir=$(eval echo "~/.local/share/prompts")
 
+if [ ! -d "$target_dir" ]; then
+  mkdir -p "$target_dir"
+fi
 
 for file in "$source_dir"/*; do
   file_name=$(basename "$file")
