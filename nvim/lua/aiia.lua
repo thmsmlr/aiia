@@ -254,77 +254,10 @@ M.cancel = function()
 	vim.fn.jobstop(vim.g.gpt_jobid)
 end
 
-local function parse_frontmatter(chatlog)
-	-- Trim leading whitespace and newlines
-	chatlog = chatlog:gsub("^%s+", "")
-
-	-- Check if first line is just "---"
-	if chatlog:sub(1, 3) ~= "---" then
-		return {}, chatlog
-	end
-
-	-- Find the end of the frontmatter
-	local frontmatter_end = chatlog:find("---", 4, true)
-	if frontmatter_end == nil then
-		return {}, chatlog
-	end
-
-	-- Parse the frontmatter
-	local yaml_string = chatlog:sub(4, frontmatter_end - 1)
-	local rest = chatlog:sub(frontmatter_end + 4)
-
-	-- use `yq` to convert yaml to json
-	local json_string = vim.fn.system("yq -j", yaml_string)
-	local frontmatter = vim.fn.json_decode(json_string)
-
-	if frontmatter == nil then
-		return {}, chatlog
-	end
-
-	return frontmatter, rest
-end
-
 local function parse_chatlog(chatlog)
-	local metadata = {}
-	metadata, chatlog = parse_frontmatter(chatlog)
-
-	local messages = {}
-	local currentRole = ""
-	local currentContent = ""
-
-	if metadata["prompt"] ~= nil then
-		table.insert(messages, { role = "system", content = metadata["prompt"] })
-	end
-
-	-- use gmatch to find all ">>> User:" and "🤖 GPT:" patterns
-	for line in chatlog:gmatch("[^\r\n]+") do
-		if line:sub(1, 4) == ">>> " then -- start of a user message
-			if currentRole ~= "" then -- append previous message to list
-				table.insert(messages, { role = currentRole, content = currentContent })
-				currentRole = "" -- reset current role
-				currentContent = "" -- reset current content
-			end
-			currentRole = "user"
-			currentContent = line:sub(5):gsub("^%s*", "") -- remove ">>> " and any leading spaces from user message
-		elseif line:find("^🤖 GPT: ") then -- start of a bot message
-			if currentRole ~= "" then -- append previous message to list
-				table.insert(messages, { role = currentRole, content = currentContent })
-				currentRole = "" -- reset current role
-				currentContent = "" -- reset current content
-			end
-			currentRole = "assistant"
-			currentContent = line:sub(9):gsub("^%s*", "") -- remove "🤖 GPT: " and any leading spaces from bot message
-		else -- continuation of previous message
-			currentContent = currentContent .. "\n" .. line
-		end
-	end
-
-	-- append last message to
-	if currentRole ~= "" then
-		table.insert(messages, { role = currentRole, content = currentContent })
-	end
-
-	return messages, metadata
+	local json_string = vim.fn.system("aiia parse -if markdown - 2>/dev/null", chatlog)
+	local parsed_chatlog = vim.fn.json_decode(json_string)
+	return parsed_chatlog
 end
 
 local function setup_chatwindow(scratchpad_file)
@@ -377,7 +310,10 @@ local function setup_chatwindow(scratchpad_file)
 		local last_line = last_nonempty_line(0)
 		vim.api.nvim_buf_set_lines(0, last_line, last_line, false, { '', '🤖 GPT: ', '', '', '' })
 		vim.api.nvim_win_set_cursor(0, { last_line + 4, 0 })
-		local messages, metadata = parse_chatlog(text)
+		local data = parse_chatlog(text)
+		local metadata = data["metadata"]
+		local messages = data["messages"]
+
 		M.stream(messages, {
 			model = metadata["model"] or "gpt-4",
 			trim_leading = true,
