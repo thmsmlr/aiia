@@ -72,6 +72,8 @@ def respond_command(
         for chunk in response:
             print(chunk, end="")
             sys.stdout.flush()
+        print("")
+        sys.stdout.flush()
     else:
         message = ""
         for chunk in response:

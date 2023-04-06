@@ -100,26 +100,20 @@ local function create_response_writer(opts)
 
 	local response = ""
 	return function(chunk)
-		-- Delete the currently written response
-		local num_lines = #(vim.split(response, "\n", {}))
-		vim.api.nvim_buf_set_lines(
-			bufnum, line_start, line_start + num_lines,
-			false, {}
-		)
-
 		-- Update the line start to wherever the extmark is now
-		line_start = vim.api.nvim_buf_get_extmark_by_id(bufnum, nsnum, extmarkid, {})[1]
+		-- line_start = vim.api.nvim_buf_get_extmark_by_id(bufnum, nsnum, extmarkid, {})[1]
 
-		-- Write out the latest
+		-- Get the position of the last character in the response
+		local last_line = line_start + #(vim.split(response, "\n", {}))
+		local last_col = vim.api.nvim_buf_get_lines(bufnum, last_line - 1, last_line, false)[1]:len()
+
+		-- Write out the latest chunk
 		response = response .. chunk
-		vim.api.nvim_buf_set_lines(
-			bufnum, line_start, line_start,
-			false, vim.split(response, "\n", {})
-		)
-
-		vim.cmd('undojoin')
+		local new_lines = vim.split(chunk, "\n", {})
+		vim.api.nvim_buf_set_text(bufnum, last_line - 1, last_col, last_line - 1, last_col, new_lines)
 	end
 end
+
 
 
 --[[
@@ -286,7 +280,6 @@ local function setup_chatwindow(scratchpad_file)
 				trim_trailing_whitespace(0)
 				local last_line = last_nonempty_line(0)
 				vim.api.nvim_buf_set_lines(0, last_line, last_line, false, { '', '>>> ' })
-				vim.api.nvim_win_set_cursor(0, { last_line + 2, 5 })
 			end
 		})
 	end, {
