@@ -61,3 +61,36 @@ You're welcome
         "title": "test",
         "model": "gpt-4",
     }
+
+
+def test_system_prompt_from_frontmatter():
+    data = aiia.parse.parse_chat_markdown(
+        """\
+---
+title: test
+model: gpt-4
+prompt: |
+    I am a little teapot, short and stout
+---
+
+>>> Write me a haiku
+
+🤖 GPT: 
+
+Silent drifting clouds
+Unfurl whispers on green slopes
+Nature's soft secrets
+
+>>> Thank you
+
+🤖 GPT: 
+
+You're welcome
+
+    """
+    )
+
+    assert data["messages"][0] == {
+        "role": "system",
+        "content": "I am a little teapot, short and stout",
+    }

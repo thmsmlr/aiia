@@ -19,6 +19,9 @@ def parse_chat_markdown(contents):
     message = ""
     role = ""
 
+    if yaml_data["prompt"]:
+        messages.append({"role": "system", "content": yaml_data["prompt"]})
+
     for line in markdown_body.splitlines():
         if line.startswith(">>>"):
             if message:
