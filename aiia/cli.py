@@ -53,6 +53,17 @@ def respond_command(
     elif input_format == "json":
         eprint("> Parsing chat logs from json")
         data = json.loads(contents)
+    elif input_format == "text":
+        eprint("> Parsing chat logs from text")
+        data = {
+            "metadata": {},
+            "messages": [
+                {
+                    "role": "user",
+                    "content": contents,
+                }
+            ],
+        }
 
     eprint("> Getting GPT to respond")
     model = data.get("metadata", {}).get("model", model)
@@ -123,7 +134,13 @@ def create_parser():
         "-i", "--inplace", action="store_true", help="edit the file in place"
     )
     respond_parser.add_argument(
-        "-if", "--input-format", choices=["json", "markdown"], default="markdown"
+        "-m", "--model", default="gpt-3.5-turbo", help="model to use"
+    )
+    respond_parser.add_argument(
+        "-if",
+        "--input-format",
+        choices=["json", "markdown", "text"],
+        default="markdown",
     )
 
     return parser
@@ -141,7 +158,10 @@ def main():
         )
     elif args.command == "respond":
         respond_command(
-            args.file_path, input_format=args.input_format, inplace=args.inplace
+            args.file_path,
+            input_format=args.input_format,
+            inplace=args.inplace,
+            model=args.model,
         )
     else:
         parser.print_help()
