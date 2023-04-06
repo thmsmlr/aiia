@@ -29,6 +29,11 @@ for file in chat_files:
     contents = open(file, "r").read()
     data = aiia.parse.parse_chat_markdown(contents)
     title = data.get("metadata", {}).get("title", "Untitled")
+    is_empty = (
+        len([m for m in data.get("messages", []) if m.get("role") == "assistant"]) == 0
+    )
+    if is_empty:
+        continue
 
     if title == "" or title == "Untitled":
         print(f"{file}")
@@ -49,10 +54,13 @@ for file in chat_files:
             )
         )
 
+        # strip an special characters
+        new_title = new_title.strip().strip(";:\"'").strip()
+
         data["metadata"]["title"] = new_title
         formatted_data = aiia.parse.to_chat_markdown(data)
 
-        with open(file, 'w') as f:
+        with open(file, "w") as f:
             f.write(formatted_data)
 
         print(f" ->  {new_title}")

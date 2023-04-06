@@ -14,7 +14,7 @@ Let's see how far we can take this.
 ### Installation
 
 ```bash
- $ pip install -e .[dev]
+ $ ./install
 ```
 
 ### Usage

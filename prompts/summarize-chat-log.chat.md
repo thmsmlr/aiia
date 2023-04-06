@@ -10,6 +10,6 @@ model: gpt-3.5-turbo
 
 --
 
-Do not use quotations or any other special characters.
+Do not use quotations, colons, semi-colons, or any other special characters.
 
 title:
