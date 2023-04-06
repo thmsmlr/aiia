@@ -1,10 +1,9 @@
 local M = {}
 
 -- Setup API key
-M.setup = function(opts)
-	local api_key = opts.api_key
-	if api_key == nil then
-		print("Please provide an OpenAI API key")
+M.setup = function()
+	if os.getenv("OPENAI_API_KEY") == "" then
+		print("Please set the OPENAI_API_KEY environment variable")
 		return
 	end
 
@@ -13,9 +12,6 @@ M.setup = function(opts)
 	if vim.fn.isdirectory(share_dir) == 0 then
 		vim.fn.mkdir(share_dir, "p")
 	end
-
-	-- Setup API key
-	vim.g.gpt_api_key = api_key
 end
 
 --[[
@@ -33,8 +29,8 @@ require('gpt').stream("What is the meaning of life?", {
 ]]
 --
 M.stream = function(prompt_or_messages, opts)
-	if vim.g.gpt_api_key == nil then
-		print("Please provide an OpenAI API key require('gpt').setup({})")
+	if os.getenv("OPENAI_API_KEY") == "" then
+		print("Please set the OPENAI_API_KEY environment variable")
 		return
 	end
 
@@ -44,14 +40,11 @@ M.stream = function(prompt_or_messages, opts)
 	end
 
 	local model = opts.model or "gpt-4"
-
 	local payload = {
-		stream = true,
-		-- model = "gpt-3.5-turbo",
-		-- model = "gpt-4",
-		model = model,
-		messages = messages,
+		metadata = { model = model },
+		messages = messages
 	}
+	local encoded_payload = vim.fn.json_encode(payload)
 
 	local identity1 = function(chunk)
 		return chunk
@@ -63,56 +56,27 @@ M.stream = function(prompt_or_messages, opts)
 	opts = opts or {}
 	local cb = opts.on_chunk or identity1
 	local on_exit = opts.on_exit or identity
-	local trim_leading = opts.trim_leading or true
-	local encoded_payload = vim.fn.json_encode(payload)
+	local command = "aiia respond -if json - | tee /tmp/aiia.log"
 
-	-- Write payload to temp file
-	local params_path = os.getenv("HOME") .. "/.local/share/nvim/gpt.query.json"
-	local temp = io.open(params_path, "w")
-	if temp ~= nil then
-		temp:write(encoded_payload)
-		temp:close()
-	end
-
-	local command =
-		"curl --no-buffer https://api.openai.com/v1/chat/completions " ..
-		"-H 'Content-Type: application/json' -H 'Authorization: Bearer " .. vim.g.gpt_api_key .. "' " ..
-		"-d @" .. params_path .. " | tee ~/.local/share/nvim/gpt.log 2>/dev/null"
-
-	-- Write command to log file
-	local log = io.open(os.getenv("HOME") .. "/.local/share/nvim/gpt.log", "w")
-	if log ~= nil then
-		log:write(command)
-		log:close()
-	end
-
-	vim.g.gpt_jobid = vim.fn.jobstart(command, {
+	local job_id = vim.fn.jobstart(command, {
 		stdout_buffered = false,
+		stdin_buffered = true,
 		on_exit = on_exit,
 		on_stdout = function(_, data, _)
-			for _, line in ipairs(data) do
-				if line ~= "" then
-					-- Strip token to get down to the JSON
-					line = line:gsub("^data: ", "")
-					if line == "" then
-						break
-					end
-					local json = vim.fn.json_decode(line)
-					local chunk = json.choices[1].delta.content
-
-					if chunk ~= nil then
-						if trim_leading then
-							chunk = chunk:gsub("^%s+", "")
-							if chunk ~= "" then
-								trim_leading = false
-							end
-						end
-						cb(chunk)
-					end
-				end
+			local joined = table.concat(data, "\n")
+			if joined ~= "" then
+				cb(joined)
 			end
 		end,
 	})
+
+	vim.g.gpt_jobid = job_id
+
+	if job_id > 0 then
+		-- Pass the JSON string to the job's stdin
+		vim.fn.chansend(job_id, encoded_payload .. "\n")
+		vim.fn.chanclose(job_id, "stdin") -- Close the stdin channel
+	end
 end
 
 local function get_visual_selection()

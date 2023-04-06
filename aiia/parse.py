@@ -19,7 +19,7 @@ def parse_chat_markdown(contents):
     message = ""
     role = ""
 
-    if yaml_data["prompt"]:
+    if yaml_data.get("prompt"):
         messages.append({"role": "system", "content": yaml_data["prompt"]})
 
     for line in markdown_body.splitlines():

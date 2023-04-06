@@ -30,5 +30,5 @@ def get_response(messages, model="gpt-3.5-turbo"):
         data = json.loads(line)
         if data["object"] == "chat.completion.chunk":
             delta = data["choices"][0]["delta"]
-            if delta:
+            if delta != "":
                 yield delta.get("content", "")
