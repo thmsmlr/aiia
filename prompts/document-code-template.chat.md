@@ -1,10 +1,12 @@
 ---
-model: gpt-3.5-turbo
+model: gpt-4
 ---
 
->>> Write a docstring for the following code
+>>> Write a docstring for the following function.
 
 ```{language}
 {selection}
 ```
+
+docstring:
 
