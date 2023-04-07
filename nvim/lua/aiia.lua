@@ -85,6 +85,8 @@ local function get_visual_selection()
 	return vim.fn.getreg('v')
 end
 
+M.get_visual_selection = get_visual_selection
+
 local function send_keys(keys)
 	vim.api.nvim_feedkeys(
 		vim.api.nvim_replace_termcodes(keys, true, false, true),
@@ -378,7 +380,7 @@ local function setup_chatwindow(scratchpad_file)
 	command = vim.fn.expand(command)
 	vim.fn.jobstart(command)
 end
-
+M.setup_chatwindow = setup_chatwindow
 M.new_chat = function()
 	local date = os.date("%Y-%m-%d-%H-%M-%S")
 	local new_file = "~/chat-logs/" .. date .. ".chat.md"
@@ -391,6 +393,30 @@ M.new_chat = function()
 	vim.fn.system("ln -sf " .. new_file .. " " .. scratchpad_file)
 
 	setup_chatwindow(new_file)
+end
+
+M.create_chat_from_template = function(template_path, params)
+	local date = os.date("%Y-%m-%d-%H-%M-%S")
+	local new_file = "~/chat-logs/" .. date .. ".chat.md"
+	new_file = vim.fn.expand(new_file)
+
+	template_path = vim.fn.expand(template_path)
+	local template = table.concat(vim.fn.readfile(template_path), '\n')
+
+	-- Replace the placeholders with the parameter values
+	for key, value in pairs(params) do
+		template = template:gsub('{%s*' .. key .. '%s*}', value)
+	end
+
+	-- Write the modified template to the destination file
+	local scratchpad_file = "~/chat-logs/latest"
+	scratchpad_file = vim.fn.expand(scratchpad_file)
+
+	vim.fn.writefile(vim.split(template, "\n"), new_file)
+	vim.fn.system("touch " .. new_file)
+	vim.fn.system("ln -sf " .. new_file .. " " .. scratchpad_file)
+
+	return new_file
 end
 
 M.open_chatwindow = function()

@@ -63,10 +63,10 @@ def parse_chat_markdown(contents):
     }
 
 
-def to_chat_markdown(chat):
+def to_chat_markdown(chat: dict) -> str:
     """Convert a chat log to chat markdown"""
-    yaml_frontmatter = yaml.safe_dump(chat["metadata"], sort_keys=False)
-    markdown_body = ""
+    yaml_frontmatter: str = yaml.safe_dump(chat["metadata"], sort_keys=False)
+    markdown_body: str = ""
 
     for message in chat["messages"]:
         if message["role"] == "user":
