@@ -1,0 +1,69 @@
+#!/usr/bin/env python
+
+import sys
+import argparse
+import subprocess
+import aiia.gpt
+
+HELP_DOC = """\
+A thin wrapper script around `git commit`.  The script will use aiia to generate a commit message
+based on `git diff --cached`.  It'll provide the user a y/n prompt.  If the user chooses yes,
+it'll go ahead with a `git commit -m "<AI MESSAGE>"`.  If no, it'll drop you into `git commit`
+where you can type your own message.
+"""
+
+
+def generate_commit_message(model: str) -> str:
+    # Replace this with a call to AI API to generate a message based on `git diff --cached`
+    git_diff = git_diff_cached()
+    message = aiia.gpt.get_response(
+        [
+            {
+                "role": "user",
+                "content": f"Given this git diff, write a commit message\n\n```\n{git_diff}\n```\n\ncommit_message: ",
+            },
+        ],
+        model=model,
+    )
+
+    return message
+
+
+def prompt_for_input(prompt: str) -> str:
+    return input(prompt)
+
+
+def commit_with_message(commit_message: str) -> None:
+    subprocess.run(["git", "commit", "-m", commit_message])
+
+
+def git_diff_cached() -> str:
+    return subprocess.check_output(["git", "diff", "--cached"]).decode()
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=HELP_DOC)
+    parser.add_argument(
+        "-m",
+        "--model",
+        help="Specify the model to use for generating the commit message.",
+        default="gpt-3.5-turbo",
+        type=str,
+    )
+    args = parser.parse_args()
+
+    commit_message = generate_commit_message(model=args.model)
+    print(f"Proposed commit message: {commit_message}")
+
+    user_choice = prompt_for_input("Do you want to use this message? [Y]/n: ")
+
+    if user_choice.lower() == "y" or user_choice.lower() == "yes" or user_choice == "":
+        commit_with_message(commit_message)
+    else:
+        sys.exit(1)
+
+    sys.exit(0)
+
+
+if __name__ == "__main__":
+    main()

@@ -67,7 +67,7 @@ def respond_command(
 
     eprint("> Getting GPT to respond")
     model = data.get("metadata", {}).get("model", model)
-    response = gpt.get_response(data.get("messages", []), model=model)
+    response = gpt.stream_response(data.get("messages", []), model=model)
     if not inplace:
         for chunk in response:
             print(chunk, end="")

@@ -7,7 +7,7 @@ OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 assert OPENAI_API_KEY, "OPENAI_API_KEY environment variable required"
 
 
-def get_response(messages, model="gpt-3.5-turbo"):
+def stream_response(messages, model="gpt-3.5-turbo"):
     payload = {"stream": True, "model": model, "messages": messages}
     headers = {
         "Content-Type": "application/json",
@@ -32,3 +32,7 @@ def get_response(messages, model="gpt-3.5-turbo"):
             delta = data["choices"][0]["delta"]
             if delta != "":
                 yield delta.get("content", "")
+
+
+def get_response(*args, **kwargs) -> str:
+    return "".join(stream_response(*args, **kwargs))
