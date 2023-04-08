@@ -95,16 +95,14 @@ local function send_keys(keys)
 end
 
 local function create_response_writer(opts)
+	if opts == nil then
+		opts = {}
+	end
 	local line_start = opts.line_no or vim.fn.line(".")
+	vim.pretty_print(line_start)
 	local bufnum = vim.api.nvim_get_current_buf()
-	local nsnum = vim.api.nvim_create_namespace("gpt")
-	local extmarkid = vim.api.nvim_buf_set_extmark(bufnum, nsnum, line_start, 0, {})
-
 	local response = ""
 	return function(chunk)
-		-- Update the line start to wherever the extmark is now
-		-- line_start = vim.api.nvim_buf_get_extmark_by_id(bufnum, nsnum, extmarkid, {})[1]
-
 		-- Get the position of the last character in the response
 		local last_line = line_start + #(vim.split(response, "\n", {}))
 		local last_col = vim.api.nvim_buf_get_lines(bufnum, last_line - 1, last_line, false)[1]:len()
@@ -170,7 +168,7 @@ M.prompt = function()
 	send_keys("<esc>")
 	M.stream(input, {
 		trim_leading = true,
-		on_chunk = create_response_writer()
+		on_chunk = create_response_writer({})
 	})
 end
 
@@ -204,7 +202,7 @@ M.visual_prompt = function()
 
 	M.stream(prompt, {
 		trim_leading = true,
-		on_chunk = create_response_writer()
+		on_chunk = create_response_writer({})
 	})
 
 	send_keys("<esc>")
