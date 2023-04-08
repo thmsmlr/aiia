@@ -10,7 +10,6 @@ This is my set of scripts, cronjobs, plugins and tools that allows me to command
 Why? well.. well.. Why not?!
 Let's see how far we can take this.
 
-
 ### Installation
 
 ```bash
