@@ -5,13 +5,11 @@ setup(
     version="0.0.1",
     packages=find_packages(),
     install_requires=[
-        'PyYAML',
+        "PyYAML",
+        "playwright",
+        "readability-lxml",
     ],
-    entry_points={
-        "console_scripts": [
-            "aiia = aiia.cli:main"
-        ]
-    },
+    entry_points={"console_scripts": ["aiia = aiia.cli:main"]},
     classifiers=[
         "Development Status :: Alpha",
         "Intended Audience :: e/acc",

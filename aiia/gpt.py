@@ -6,8 +6,19 @@ import json
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 assert OPENAI_API_KEY, "OPENAI_API_KEY environment variable required"
 
+from typing import Any, Dict, Iterator, List
 
-def stream_response(messages, model="gpt-3.5-turbo"):
+
+def stream_response(
+    messages: List[Dict[str, Any]], model: str = "gpt-3.5-turbo"
+) -> Iterator[str]:
+    """
+    Stream response from the OpenAI API for chat-based language models.
+
+    :param messages: A list of message dictionaries with 'role' and 'content' keys.
+    :param model: The name of the language model to use. Defaults to "gpt-3.5-turbo".
+    :returns: An iterator yielding the content of the response.
+    """
     payload = {"stream": True, "model": model, "messages": messages}
     headers = {
         "Content-Type": "application/json",
