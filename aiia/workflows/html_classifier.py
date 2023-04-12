@@ -2,17 +2,26 @@
 LEFT_PAREN = """
 (
 """.strip()
+LEFT_BRACKET = """
+[
+""".strip()
 
 PROMPT = """\
 Answer the following questions as best you can. Can only use the following function call read the HTML document:
 
-1. `READ_PAGE(page_number) -> html_partial` - This function will read the HTML document part by part, it'll return the part of the document as defined by the page_number and the number of parts in the document.
+1. READ[part_number] 
+
+    This function will read the HTML document part by part, it'll return the part of the document as defined by the page_number and the number of parts in the document.
+
+2. ADD_TO_MEMORY[observation] 
+
+    This function will allow you to save an observation to use later in your thinking sequence. 
 
 Use the following format:
 
 Question: the input question you must answer
 Thought: you should always think about what to do
-Action: the action to take, should be one of [SEARCH, READ]
+Action: the action to take, should be one of [READ, ADD_TO_MEMORY]
 Observation: the result of the action
 ... (this Thought/Action/Observation can repeat N times)
 Thought: I now know the final answer
@@ -31,7 +40,8 @@ import aiia.gpt
 def stream_response_until(prompt, stop_word="\nAction: "):
     response = ""
     for chunk in aiia.gpt.stream_response(
-        model="gpt-4", messages=[{"role": "user", "content": prompt}]
+        # model="gpt-4",
+        messages=[{"role": "user", "content": prompt}]
     ):
         yield chunk
 
@@ -41,12 +51,14 @@ def stream_response_until(prompt, stop_word="\nAction: "):
 
 
 def run(question: str):
+    memories = []
     print()
     print(f"Question: {question}")
     print()
     prompt = PROMPT.format(question=question)
     while True:
         print(prompt)
+        print(memories)
         for chunk in stream_response_until(prompt, stop_word="\nObservation: "):
             prompt += chunk
             print(chunk, end="")
@@ -69,19 +81,21 @@ def run(question: str):
 
             prompt = prompt.rsplit("\nObservation:", 1)[0]
             action = clauses[-2][1].strip()
-            action_name = action.split(LEFT_PAREN)[0]
+            action_name = action.split(LEFT_BRACKET)[0]
 
-            if action_name == "READ_PAGE":
-                page_number = int(action.split("READ_PAGE(")[1].split(")")[0]) - 1
+            if action_name == "READ":
+                page_number = int(action.split("READ[")[1].split("]")[0]) - 1
                 CHUNK_SIZE = 2500
                 result = open("/home/thomas/temp/index.html", "r").read()[
                     (CHUNK_SIZE * page_number) : (CHUNK_SIZE * (page_number + 1))
                 ]
-                observation = f"\nObservation: \n\n ```html\n{result!r}\n```\n"
+                observation = f"\nObservation: Result({page_number + 1} of 12)\n\n ```html\n{result}\n```\n"
                 print(observation, end="")
                 prompt += observation
+            elif action_name == "ADD_TO_MEMORY":
+                memories.append(action.split("ADD_TO_MEMORY[")[1].split("]")[0])
             else:
-                print(f"Unknown action {action}")
+                print(f"Unknown action {action_name} text {action}")
                 break
 
         else:
@@ -91,6 +105,6 @@ def run(question: str):
 if __name__ == "__main__":
     run(
         """
-        Find opening HTML tags for the container of paid partner content, or advertisements. Be sure to read the entire document before responding with the final answer.
+        Find opening HTML tags for the container of an advertisement. Be sure to read the entire document before responding with the final answer.
     """.strip()
     )
